@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+## Rider
+*.sln.iml
+
+## Secrets / local config
+appsettings.*.local.json
+*.env
+.env
+
+## OS
+Thumbs.db
+.DS_Store

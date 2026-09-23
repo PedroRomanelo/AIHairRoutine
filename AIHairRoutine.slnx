@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AIHairRoutine.Api/AIHairRoutine.Api.csproj" />
+    <Project Path="src/AIHairRoutine.Application/AIHairRoutine.Application.csproj" />
+    <Project Path="src/AIHairRoutine.Infrastructure/AIHairRoutine.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AIHairRoutine.Tests/AIHairRoutine.Tests.csproj" />
+  </Folder>
+</Solution>

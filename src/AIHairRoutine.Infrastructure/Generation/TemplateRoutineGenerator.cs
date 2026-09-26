@@ -1,133 +1,153 @@
 using AIHairRoutine.Application.Abstractions;
+using AIHairRoutine.Application.Localization;
 using AIHairRoutine.Application.Models;
 
 namespace AIHairRoutine.Infrastructure.Generation;
 
 /// <summary>
-/// Deterministic fallback generator. Produces a sensible, safe routine without any LLM,
-/// so the endpoint keeps working (with degraded richness) when the provider is unavailable.
+/// Deterministic fallback narrative. Writes a sensible summary, how/why for each product and tips
+/// without any LLM, so the endpoint keeps working (with plainer text) when the provider is unavailable.
 /// </summary>
 public sealed class TemplateRoutineGenerator : IRoutineGenerator
 {
     public Task<RoutineResult> GenerateAsync(
         ProfileResult profile,
-        IReadOnlyList<ProductMatch> products,
+        HairSchedule schedule,
+        IReadOnlyList<Product> products,
         string locale,
         CancellationToken ct = default)
     {
-        bool en = locale.StartsWith("en", StringComparison.OrdinalIgnoreCase);
-        var p = profile.Profile;
-        var priorities = profile.Priorities;
+        bool en = Labels.IsEnglish(locale);
 
-        int? Pick(params string[] categories) => products
-            .Where(m => categories.Contains(m.Product.Category, StringComparer.OrdinalIgnoreCase))
-            .Select(m => (int?)m.Product.Id)
-            .FirstOrDefault();
-
-        var steps = new List<RoutineStep>();
-        int order = 1;
-
-        string washFreq = p.Condition == HairCondition.Oily
-            ? (en ? "every other day" : "dia sim, dia não")
-            : (en ? "2-3x per week" : "2 a 3x por semana");
-
-        steps.Add(new RoutineStep
+        var narrative = new RoutineNarrative
         {
-            Order = order++,
-            Phase = "wash",
-            Frequency = washFreq,
-            ProductId = Pick("shampoo"),
-            How = en ? "Massage into the scalp and rinse." : "Massageie no couro cabeludo e enxágue.",
-            Why = en ? "Cleanses without stripping the hair." : "Limpa sem agredir os fios.",
-        });
+            Summary = Summary(profile, schedule, en),
+            ProductNotes = products.Select(p => new ProductNote(p.Id, How(p, en), Why(p, en))).ToList(),
+            Tips = Tips(profile.Profile, en),
+        };
 
-        steps.Add(new RoutineStep
-        {
-            Order = order++,
-            Phase = "condition",
-            Frequency = en ? "every wash" : "toda lavagem",
-            ProductId = Pick("conditioner"),
-            How = en ? "Apply from mid-length to ends, rinse." : "Aplique do meio às pontas e enxágue.",
-            Why = en ? "Seals cuticles and adds slip." : "Sela as cutículas e dá deslize.",
-        });
-
-        if (priorities.Contains(HairPriority.Hydration) || priorities.Contains(HairPriority.DamageRepair))
-        {
-            steps.Add(new RoutineStep
-            {
-                Order = order++,
-                Phase = "weekly",
-                Frequency = en ? "1-2x per week" : "1 a 2x por semana",
-                ProductId = Pick("mask"),
-                How = en ? "Apply to damp hair, wait 5-15 min, rinse." : "Aplique no cabelo úmido, aguarde 5-15 min e enxágue.",
-                Why = en ? "Deep treatment for the top priorities." : "Tratamento profundo para as prioridades principais.",
-            });
-        }
-
-        if (priorities.Contains(HairPriority.FrizzControl))
-        {
-            steps.Add(new RoutineStep
-            {
-                Order = order++,
-                Phase = "finish",
-                Frequency = en ? "daily" : "diariamente",
-                ProductId = Pick("leave_in", "oil"),
-                How = en ? "Apply a small amount to damp ends." : "Aplique pouca quantidade nas pontas úmidas.",
-                Why = en ? "Controls frizz and protects the fiber." : "Controla o frizz e protege o fio.",
-            });
-        }
-
-        if (priorities.Contains(HairPriority.HairLossControl))
-        {
-            steps.Add(new RoutineStep
-            {
-                Order = order++,
-                Phase = "treatment",
-                Frequency = en ? "as directed" : "conforme indicação",
-                ProductId = Pick("tonic"),
-                How = en ? "Apply to the scalp and massage." : "Aplique no couro cabeludo e massageie.",
-                Why = en ? "Supports the scalp against shedding." : "Apoia o couro cabeludo contra a queda.",
-            });
-        }
-
-        var priorityLabels = string.Join(", ", priorities.Select(pr => PriorityLabel(pr, en)));
-        var summary = en
-            ? $"Routine focused on {priorityLabels} for {HairTypeLabel(p.HairType, true)} hair."
-            : $"Rotina com foco em {priorityLabels} para cabelo {HairTypeLabel(p.HairType, false)}.";
-
-        var tips = en
-            ? new List<string> { "Avoid very hot water.", "Use heat protection before blow-drying." }
-            : new List<string> { "Evite água muito quente.", "Use protetor térmico antes de secar." };
-
-        var routine = new HairRoutine { Summary = summary, Steps = steps, Tips = tips };
-        return Task.FromResult(new RoutineResult { Routine = routine, Model = "template", FromCache = false });
+        return Task.FromResult(new RoutineResult { Narrative = narrative, Model = "template", FromCache = false });
     }
 
-    private static string PriorityLabel(HairPriority priority, bool en) => (priority, en) switch
+    private static string Summary(ProfileResult profile, HairSchedule schedule, bool en)
     {
-        (HairPriority.Hydration, false) => "hidratação",
-        (HairPriority.FrizzControl, false) => "controle de frizz",
-        (HairPriority.DamageRepair, false) => "reparação",
-        (HairPriority.OilControl, false) => "controle de oleosidade",
-        (HairPriority.HairLossControl, false) => "queda",
-        (HairPriority.Hydration, true) => "hydration",
-        (HairPriority.FrizzControl, true) => "frizz control",
-        (HairPriority.DamageRepair, true) => "damage repair",
-        (HairPriority.OilControl, true) => "oil control",
-        (HairPriority.HairLossControl, true) => "hair loss",
-        _ => priority.ToString(),
+        var hairType = Labels.Of(profile.Profile.HairType, en);
+        var priorities = Labels.JoinList(profile.Priorities.Select(p => Labels.Of(p, en)), en);
+        int washes = schedule.WashDays.Count;
+
+        var cycle = Labels.JoinList(
+            schedule.Weeks
+                .SelectMany(w => w.Days)
+                .SelectMany(d => d.Steps)
+                .Where(s => s.Treatment is not null)
+                .GroupBy(s => s.Treatment!.Value)
+                .OrderBy(g => g.Key)
+                .Select(g => $"{g.Count()}x {Labels.Of(g.Key, en)}"),
+            en);
+
+        return en
+            ? $"4-week schedule for {hairType} hair focused on {priorities}: {washes} washes a week and {cycle} across the cycle."
+            : $"Cronograma de 4 semanas para cabelo {hairType} com foco em {priorities}: {washes} lavagens por semana e {cycle} ao longo do ciclo.";
+    }
+
+    private static string How(Product p, bool en)
+    {
+        var minutes = p.ActionTimeMinutes;
+        return p.Category switch
+        {
+            ProductCategory.Shampoo => en
+                ? "Apply to a wet scalp, massage with your fingertips and rinse well."
+                : "Aplique no couro cabeludo molhado, massageie com as pontas dos dedos e enxágue bem.",
+            ProductCategory.Conditioner => en
+                ? "Apply from mid-lengths to ends, detangle with your fingers and rinse."
+                : "Aplique do comprimento às pontas, desembarace com os dedos e enxágue.",
+            ProductCategory.Mask or ProductCategory.Treatment when p.TreatmentTypes.Count > 0 => en
+                ? $"After shampooing, apply section by section, leave on for {Minutes(minutes, en)} and rinse."
+                : $"Após o shampoo, aplique mecha a mecha, deixe agir {Minutes(minutes, en)} e enxágue.",
+            ProductCategory.Treatment => en
+                ? "Apply directly to the scalp and massage gently; do not rinse."
+                : "Aplique diretamente no couro cabeludo e massageie suavemente; não enxágue.",
+            ProductCategory.LeaveIn => en
+                ? "On damp hair, apply from mid-lengths to ends; do not rinse."
+                : "No cabelo úmido, aplique do comprimento às pontas, sem enxaguar.",
+            ProductCategory.Serum => en
+                ? "Apply a few drops to the ends, on damp or dry hair."
+                : "Aplique poucas gotas nas pontas, com o cabelo úmido ou seco.",
+            ProductCategory.Oil => en
+                ? "Warm 1–2 drops between your palms and smooth over the ends."
+                : "Espalhe 1 a 2 gotas nas palmas das mãos e aplique nas pontas.",
+            _ => en
+                ? "Apply to damp hair and style as you prefer (air-dry or diffuser)."
+                : "Aplique no cabelo úmido e finalize como preferir (ao natural ou com difusor).",
+        };
+    }
+
+    private static string Minutes(int? minutes, bool en) => minutes is { } m
+        ? $"{m} min"
+        : en ? "as directed on the label" : "conforme a embalagem";
+
+    private static string Why(Product p, bool en)
+    {
+        if (p.TreatmentTypes.Count > 0)
+        {
+            var steps = Labels.JoinList(p.TreatmentTypes.Select(t => Labels.Of(t, en)), en);
+            var effects = Labels.JoinList(p.TreatmentTypes.Select(t => TreatmentEffect(t, en)), en);
+            return en
+                ? $"{Labels.Capitalize(steps)} step of the schedule: {effects}."
+                : $"Etapa de {steps} do cronograma: {effects}.";
+        }
+
+        var reason = p.Category switch
+        {
+            ProductCategory.Shampoo => en ? "Cleanses the scalp and preps the strands." : "Limpa o couro cabeludo e prepara os fios.",
+            ProductCategory.Conditioner => en ? "Seals the cuticles and eases detangling." : "Sela as cutículas e facilita o desembaraço.",
+            ProductCategory.LeaveIn => en ? "Protects and keeps hair moisturized through the day." : "Protege e mantém a hidratação ao longo do dia.",
+            ProductCategory.Serum => en ? "Seals the ends and reduces frizz." : "Sela as pontas e reduz o frizz.",
+            ProductCategory.Oil => en ? "Nourishes the ends and adds shine." : "Nutre as pontas e dá brilho.",
+            ProductCategory.Finisher => en ? "Styles and keeps the result." : "Finaliza e mantém o resultado.",
+            _ => en ? "Targeted treatment." : "Tratamento direcionado.",
+        };
+
+        if (p.Targets.Count == 0)
+            return reason;
+
+        var focus = Labels.JoinList(p.Targets.Select(t => Labels.Of(t, en)), en);
+        return en ? $"{reason} Focus: {focus}." : $"{reason} Foco em {focus}.";
+    }
+
+    private static string TreatmentEffect(TreatmentType type, bool en) => (type, en) switch
+    {
+        (TreatmentType.Hydration, false) => "repõe água e maciez",
+        (TreatmentType.Nutrition, false) => "repõe lipídios, reduz o frizz e devolve o brilho",
+        (TreatmentType.Reconstruction, false) => "repõe massa e fortalece a fibra",
+        (TreatmentType.Hydration, true) => "restores water and softness",
+        (TreatmentType.Nutrition, true) => "restores lipids, tames frizz and brings back shine",
+        _ => "restores mass and strengthens the fiber",
     };
 
-    private static string HairTypeLabel(HairType type, bool en) => (type, en) switch
+    private static IReadOnlyList<string> Tips(HairProfile p, bool en)
     {
-        (HairType.Straight, false) => "liso",
-        (HairType.Wavy, false) => "ondulado",
-        (HairType.Curly, false) => "cacheado",
-        (HairType.Coily, false) => "crespo",
-        (HairType.Straight, true) => "straight",
-        (HairType.Wavy, true) => "wavy",
-        (HairType.Curly, true) => "curly",
-        (HairType.Coily, true) => "coily",
-        _ => type.ToString(),
-    };
+        var tips = new List<string>
+        {
+            en ? "Sleep on a satin pillowcase or with loosely tied hair to reduce friction."
+               : "Durma com fronha de cetim ou com o cabelo preso frouxo para reduzir o atrito.",
+            en ? "Trim the ends every 3 months to keep the strands healthy."
+               : "Apare as pontas a cada 3 meses para manter a saúde dos fios.",
+        };
+
+        if (p.HairType is HairType.Curly or HairType.Coily)
+            tips.Add(en ? "Style while hair is still very wet and avoid brushing it dry to keep your curls defined."
+                        : "Finalize com o cabelo bem molhado e evite escovar a seco para manter os cachos definidos.");
+        if (p.Has(HairCondition.Oily))
+            tips.Add(en ? "Avoid touching the roots during the day and prefer lukewarm water."
+                        : "Evite mexer na raiz ao longo do dia e prefira água morna.");
+        if (p.Has(HairCondition.Dull))
+            tips.Add(en ? "A final cold-water rinse helps seal the cuticle and adds shine."
+                        : "Um último enxágue com água fria ajuda a selar a cutícula e dar brilho.");
+        if (p.Thickness == HairThickness.Fine)
+            tips.Add(en ? "Use small amounts of product so fine hair isn't weighed down."
+                        : "Use pouca quantidade de produto para não pesar os fios finos.");
+
+        return tips;
+    }
 }

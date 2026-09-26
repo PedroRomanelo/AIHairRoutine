@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 namespace AIHairRoutine.Infrastructure.Generation;
 
 /// <summary>
-/// Provider-agnostic routine generator (the primary Strategy). Delegates the LLM call to whichever
+/// Provider-agnostic narrative generator (the primary Strategy). Delegates the LLM call to whichever
 /// <see cref="IChatModelClient"/> adapter is active (Anthropic/OpenAI/Gemini/DeepSeek) and maps the
-/// returned JSON to the domain routine. Provider selection and API-key handling live behind the adapter.
+/// returned JSON to the domain narrative. Provider selection and API-key handling live behind the adapter.
 /// </summary>
 public sealed class ChatRoutineGenerator(
     IChatModelClient client,
@@ -21,26 +21,25 @@ public sealed class ChatRoutineGenerator(
 
     public async Task<RoutineResult> GenerateAsync(
         ProfileResult profile,
-        IReadOnlyList<ProductMatch> products,
+        HairSchedule schedule,
+        IReadOnlyList<Product> products,
         string locale,
         CancellationToken ct = default)
     {
-        var prompt = new ChatPrompt(
-            promptBuilder.BuildSystem(),
-            promptBuilder.BuildUser(profile, products, locale));
+        var prompt = promptBuilder.Build(profile, schedule, products, locale);
 
-        var text = await client.CompleteAsync(prompt, ct);
-        var dto = ParseRoutine(text);
+        var text = await client.CompleteAsync(new ChatPrompt(prompt.System, prompt.User), ct);
+        var dto = ParseNarrative(text);
 
         return new RoutineResult
         {
-            Routine = Map(dto),
+            Narrative = Map(dto, prompt.ProductAliases, products),
             Model = options.Value.Active.Model,
             FromCache = false,
         };
     }
 
-    private static RoutineDto ParseRoutine(string text)
+    private static NarrativeDto ParseNarrative(string text)
     {
         // The model is asked for pure JSON, but defensively extract the outermost object.
         int start = text.IndexOf('{');
@@ -49,22 +48,28 @@ public sealed class ChatRoutineGenerator(
             throw new InvalidOperationException("The model response did not contain a JSON object.");
 
         var json = text[start..(end + 1)];
-        return JsonSerializer.Deserialize<RoutineDto>(json, Json)
-            ?? throw new InvalidOperationException("The model JSON could not be parsed into a routine.");
+        return JsonSerializer.Deserialize<NarrativeDto>(json, Json)
+            ?? throw new InvalidOperationException("The model JSON could not be parsed into a narrative.");
     }
 
-    private static HairRoutine Map(RoutineDto dto) => new()
+    /// <summary>Maps aliases back to product ids. An incomplete answer throws so the template fallback takes over.</summary>
+    private static RoutineNarrative Map(NarrativeDto dto, IReadOnlyDictionary<string, Guid> aliases, IReadOnlyList<Product> products)
     {
-        Summary = dto.Summary ?? string.Empty,
-        Steps = dto.Steps.Select(s => new RoutineStep
+        var notes = dto.Products
+            .Where(n => n.Ref is not null && aliases.ContainsKey(n.Ref) && !string.IsNullOrWhiteSpace(n.How))
+            .Select(n => new ProductNote(aliases[n.Ref!], n.How!, n.Why ?? string.Empty))
+            .DistinctBy(n => n.ProductId)
+            .ToList();
+
+        var missing = products.Count(p => notes.All(n => n.ProductId != p.Id));
+        if (missing > 0)
+            throw new InvalidOperationException($"The model response is missing instructions for {missing} product(s).");
+
+        return new RoutineNarrative
         {
-            Order = s.Order,
-            Phase = s.Phase ?? "step",
-            Frequency = s.Frequency ?? string.Empty,
-            ProductId = s.ProductId,
-            How = s.How ?? string.Empty,
-            Why = s.Why ?? string.Empty,
-        }).ToList(),
-        Tips = dto.Tips,
-    };
+            Summary = dto.Summary ?? string.Empty,
+            ProductNotes = notes,
+            Tips = dto.Tips,
+        };
+    }
 }

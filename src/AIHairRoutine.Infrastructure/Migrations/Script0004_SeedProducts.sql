@@ -1,0 +1,105 @@
+-- Seed catalog: every category, every H/N/R axis (including multi-axis products), hair-type
+-- specialists, allergen-free alternatives and chemical contraindications.
+-- ApplicationOrder: shampoo 1 → conditioner 2 → mask 3 → treatment 4 → leave-in 5 → serum/oil 6 → finisher 7.
+INSERT INTO dbo.Products
+    (Name, Brand, Description, Category, HairTypesCsv, TargetsCsv, TreatmentTypesCsv, SafeForChemical,
+     ContraindicatedChemicalsCsv, UsageFrequency, ActionTimeMinutes, ApplicationOrder, MinIntervalDays,
+     KeyIngredientsCsv, AllergensCsv, Price, SizeMl)
+VALUES
+    -- Shampoos
+    (N'Shampoo Hidratante Suave',       N'HairLab',  N'Limpeza suave que preserva a hidratação natural.',
+     'shampoo',     'all',               'hydration,shine',                       '',                           1, '',                         'daily',        NULL, 1, 0,
+     N'glicerina,pantenol,aloe vera',                         'fragrance',                  39.90, 300),
+    (N'Shampoo Low Poo Cachos',          N'CurlCo',   N'Low poo que limpa sem ressecar cachos e crespos.',
+     'shampoo',     'wavy,curly,coily',  'hydration,nutrition,frizz_control',     '',                           1, '',                         'daily',        NULL, 1, 0,
+     N'manteiga de karité,óleo de coco,glicerina',            'coconut_oil',                44.90, 300),
+    (N'Shampoo Sensível Sem Sulfato',    N'PureCare', N'Fórmula hipoalergênica, sem fragrância e sem sulfato.',
+     'shampoo',     'all',               'hydration',                             '',                           1, '',                         'daily',        NULL, 1, 0,
+     N'pantenol,camomila',                                    '',                           49.90, 250),
+    (N'Shampoo Antioleosidade',          N'ScalpMed', N'Equilibra a oleosidade da raiz e dá leveza.',
+     'shampoo',     'straight,wavy',     'oil_control,volume',                    '',                           0, '',                         'daily',        NULL, 1, 0,
+     N'argila verde,mentol,zinco pca',                        'sulfate,fragrance',          34.90, 300),
+    (N'Shampoo Reconstrutor',            N'HairLab',  N'Repõe massa durante a lavagem de fios danificados.',
+     'shampoo',     'all',               'reconstruction',                        '',                           1, '',                         'daily',        NULL, 1, 0,
+     N'queratina hidrolisada,aminoácidos',                    'sulfate,fragrance',          42.90, 300),
+    (N'Shampoo Fortalecedor Antiqueda',  N'ScalpMed', N'Estimula o couro cabeludo e reduz a queda.',
+     'shampoo',     'all',               'hair_loss_control,oil_control',         '',                           1, '',                         'daily',        NULL, 1, 0,
+     N'cafeína,biotina,niacinamida',                          'fragrance',                  54.90, 250),
+
+    -- Conditioners
+    (N'Condicionador Hidratante',        N'HairLab',  N'Desembaraça e mantém a hidratação.',
+     'conditioner', 'all',               'hydration,frizz_control',               '',                           1, '',                         'daily',        NULL, 2, 0,
+     N'pantenol,glicerina,manteiga de manga',                 'fragrance,silicone',         39.90, 300),
+    (N'Condicionador Nutritivo Cachos',  N'CurlCo',   N'Nutrição e definição para ondulados, cacheados e crespos.',
+     'conditioner', 'wavy,curly,coily',  'nutrition,frizz_control,shine',         '',                           1, '',                         'daily',        NULL, 2, 0,
+     N'manteiga de karité,óleo de macadâmia',                 'nut_oils',                   44.90, 300),
+    (N'Condicionador Reconstrutor',      N'HairLab',  N'Fortalece fios frágeis e com quebra.',
+     'conditioner', 'all',               'reconstruction,shine',                  '',                           1, '',                         'daily',        NULL, 2, 0,
+     N'queratina,colágeno,proteína do trigo',                 'wheat_protein,fragrance',    42.90, 300),
+    (N'Condicionador Leve Volume',       N'PureCare', N'Condiciona sem pesar, ideal para fios finos.',
+     'conditioner', 'straight,wavy',     'volume,hydration,oil_control',          '',                           1, '',                         'daily',        NULL, 2, 0,
+     N'pantenol,extrato de hortelã',                          '',                           36.90, 250),
+
+    -- Masks (H/N/R)
+    (N'Máscara Hidratação Intensa',      N'HairLab',  N'Repõe água e maciez em fios ressecados.',
+     'mask',        'all',               'hydration,frizz_control',               'hydration',                  1, '',                         'weekly',       15,   3, 2,
+     N'ácido hialurônico,pantenol,aloe vera',                 'fragrance',                  59.90, 250),
+    (N'Máscara Hidratante Hipoalergênica', N'PureCare', N'Hidratação sem fragrância para couro cabeludo sensível.',
+     'mask',        'all',               'hydration',                             'hydration',                  1, '',                         'weekly',       10,   3, 2,
+     N'glicerina,pantenol',                                   '',                           64.90, 250),
+    (N'Máscara Nutrição Cachos',         N'CurlCo',   N'Repõe lipídios, define e reduz o frizz.',
+     'mask',        'wavy,curly,coily',  'nutrition,frizz_control,shine',         'nutrition',                  1, '',                         'weekly',       20,   3, 3,
+     N'manteiga de karité,óleo de coco,óleo de abacate',      'coconut_oil',                69.90, 300),
+    (N'Máscara Nutritiva Óleos Nobres',  N'HairLab',  N'Nutrição e brilho com óleos leves.',
+     'mask',        'all',               'nutrition,shine',                       'nutrition',                  1, '',                         'weekly',       15,   3, 3,
+     N'óleo de argan,óleo de macadâmia,ômega 9',              'nut_oils,fragrance',         62.90, 250),
+    (N'Máscara 2 em 1 Hidranutri',       N'CurlCo',   N'Hidrata e nutre na mesma aplicação.',
+     'mask',        'all',               'hydration,nutrition,frizz_control',     'hydration,nutrition',        1, '',                         'weekly',       20,   3, 3,
+     N'manteiga de murumuru,glicerina,pantenol',              'fragrance',                  74.90, 300),
+    (N'Máscara Reconstrução Queratina',  N'HairLab',  N'Reconstrução com queratina para fios danificados.',
+     'mask',        'all',               'reconstruction,shine',                  'reconstruction',             1, 'relaxation,straightening', 'weekly',       10,   3, 7,
+     N'queratina hidrolisada,aminoácidos,arginina',           'fragrance,paraben',          69.90, 250),
+    (N'Máscara Reconstrução Vegana',     N'PureCare', N'Reconstrução com proteínas vegetais, sem fragrância.',
+     'mask',        'all',               'reconstruction',                        'reconstruction',             1, '',                         'weekly',       10,   3, 7,
+     N'proteína de arroz,proteína de ervilha,aminoácidos vegetais', '',                     72.90, 250),
+
+    -- Treatments
+    (N'Ampola Reconstrução Pós-Química', N'HairLab',  N'Dose de reconstrução e hidratação para fios com química.',
+     'treatment',   'all',               'reconstruction,hydration',              'reconstruction,hydration',   1, '',                         'weekly',       5,    4, 7,
+     N'queratina,ceramidas,pantenol',                         'fragrance',                  29.90, 15),
+    (N'Tônico Fortalecedor Antiqueda',   N'ScalpMed', N'Aplicação diária no couro cabeludo contra a queda.',
+     'treatment',   'all',               'hair_loss_control',                     '',                           0, '',                         'daily',        NULL, 4, 0,
+     N'cafeína,biotina,jaborandi',                            'essential_oils',             79.90, 100),
+
+    -- Leave-ins
+    (N'Leave-in Antifrizz',              N'CurlCo',   N'Controla o frizz e a umidade sem pesar.',
+     'leave_in',    'wavy,curly,coily',  'frizz_control,hydration,nutrition',     '',                           1, '',                         'daily',        NULL, 5, 0,
+     N'manteiga de karité,glicerina',                         'fragrance,silicone',         39.90, 200),
+    (N'Leave-in Protetor Térmico Leve',  N'HairLab',  N'Protege do calor e dá brilho sem pesar.',
+     'leave_in',    'straight,wavy',     'frizz_control,shine,volume',            '',                           1, '',                         'daily',        NULL, 5, 0,
+     N'pantenol,filtro uv,ciclopentasiloxano',                'silicone',                   36.90, 200),
+    (N'Leave-in Hipoalergênico',         N'PureCare', N'Hidratação leve sem fragrância.',
+     'leave_in',    'all',               'hydration,frizz_control',               '',                           1, '',                         'daily',        NULL, 5, 0,
+     N'aloe vera,glicerina',                                  '',                           42.90, 200),
+
+    -- Serum / oils
+    (N'Sérum de Pontas Anti-frizz',      N'HairLab',  N'Sela as pontas e reduz o frizz.',
+     'serum',       'all',               'frizz_control,shine,reconstruction',    '',                           1, '',                         'daily',        NULL, 6, 0,
+     N'dimeticona,óleo de argan',                             'silicone,nut_oils',          49.90, 50),
+    (N'Óleo Capilar Nutritivo',          N'CurlCo',   N'Nutre e dá brilho às pontas de cachos e crespos.',
+     'oil',         'wavy,curly,coily',  'nutrition,shine,frizz_control',         '',                           1, '',                         'daily',        NULL, 6, 0,
+     N'óleo de coco,óleo de rícino,óleo de abacate',          'coconut_oil',                34.90, 60),
+    (N'Óleo Leve de Argan',              N'PureCare', N'Brilho e nutrição leve, sem fragrância.',
+     'oil',         'all',               'shine,nutrition',                       '',                           1, '',                         'daily',        NULL, 6, 0,
+     N'óleo de argan,vitamina e',                             'nut_oils',                   44.90, 30),
+    (N'Óleo de Semente de Uva',          N'PureCare', N'Óleo seco e leve, sem fragrância e sem óleos de castanhas.',
+     'oil',         'all',               'shine,nutrition,frizz_control',         '',                           1, '',                         'daily',        NULL, 6, 0,
+     N'óleo de semente de uva,vitamina e',                    '',                           32.90, 30),
+
+    -- Finishers
+    (N'Creme de Pentear Definição',      N'CurlCo',   N'Define e prolonga os cachos (pode reativar com água).',
+     'finisher',    'curly,coily',       'nutrition,frizz_control',               '',                           1, '',                         'daily',        NULL, 7, 0,
+     N'manteiga de cupuaçu,glicerina',                        'fragrance',                  37.90, 300),
+    (N'Spray Finalizador Volume',        N'HairLab',  N'Volume e brilho para fios finos e lisos.',
+     'finisher',    'straight,wavy',     'volume,shine',                          '',                           1, '',                         'twice_weekly', NULL, 7, 0,
+     N'proteína de arroz,polímeros fixadores',                'fragrance',                  39.90, 150);

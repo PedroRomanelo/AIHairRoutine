@@ -15,18 +15,19 @@ public sealed class FallbackRoutineGenerator(
 {
     public async Task<RoutineResult> GenerateAsync(
         ProfileResult profile,
-        IReadOnlyList<ProductMatch> products,
+        HairSchedule schedule,
+        IReadOnlyList<Product> products,
         string locale,
         CancellationToken ct = default)
     {
         try
         {
-            return await primary.GenerateAsync(profile, products, locale, ct);
+            return await primary.GenerateAsync(profile, schedule, products, locale, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             logger.LogWarning(ex, "Primary routine generator failed; using template fallback.");
-            return await fallback.GenerateAsync(profile, products, locale, ct);
+            return await fallback.GenerateAsync(profile, schedule, products, locale, ct);
         }
     }
 }

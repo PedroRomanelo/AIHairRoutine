@@ -8,7 +8,7 @@ namespace AIHairRoutine.Infrastructure.Profiling;
 
 /// <summary>
 /// Strategy selector: uses deterministic rules for the common case and JEV only when the input
-/// is ambiguous or has free text. If JEV fails or times out, it degrades gracefully to rules.
+/// is ambiguous. If JEV fails or times out, it degrades gracefully to rules.
 /// </summary>
 public sealed class HybridProfiler(
     RuleBasedProfiler rules,
@@ -31,17 +31,11 @@ public sealed class HybridProfiler(
         }
     }
 
-    /// <summary>JEV earns its cost when the signal is fuzzy: free text, "Other" chemistry, or conflicting scores.</summary>
-    private static bool ShouldUseJev(HairAssessment a)
-    {
-        if (!string.IsNullOrWhiteSpace(a.Notes))
-            return true;
-        if (a.ChemicalTreatment == ChemicalTreatment.Other)
-            return true;
-
-        // Conflicting oiliness vs dryness in the mid range is genuinely ambiguous for simple rules.
-        var c = a.Concerns;
-        bool conflicting = c.Dryness is >= 4 and <= 7 && c.Oiliness is >= 4 and <= 7;
-        return conflicting;
-    }
+    /// <summary>
+    /// JEV earns its cost when the signal is fuzzy: an unspecified ("other") chemical, or a goal
+    /// written in words the keyword rules don't recognize.
+    /// </summary>
+    private static bool ShouldUseJev(HairAssessment a) =>
+        a.Chemical is { HasChemical: true, Type: ChemicalType.Other }
+        || (!string.IsNullOrWhiteSpace(a.MainGoal) && GoalKeywordExtractor.Extract(a.MainGoal).Count == 0);
 }

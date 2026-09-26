@@ -23,7 +23,8 @@ public sealed class ProductRepository(ISqlConnectionFactory factory) : IProductR
         return rows.Select(Map).ToList();
     }
 
-    private static Product Map(ProductRow r) => new()
+    /// <summary>Converts a database row into a product. Internal so the CSV/enum mapping is testable without a database.</summary>
+    internal static Product Map(ProductRow r) => new()
     {
         Id = r.Id,
         Name = r.Name,
@@ -75,7 +76,7 @@ public sealed class ProductRepository(ISqlConnectionFactory factory) : IProductR
             ? []
             : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-    private sealed class ProductRow
+    internal sealed class ProductRow
     {
         public Guid Id { get; init; }
         public string Name { get; init; } = string.Empty;

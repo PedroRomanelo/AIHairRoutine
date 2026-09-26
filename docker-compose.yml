@@ -9,7 +9,12 @@ services:
       Database__RunMigrationsOnStartup: "true"
       # Provide these to enable the AI paths; empty = rules + template fallback.
       Jev__ApiKey: "${JEV_API_KEY:-}"
-      Anthropic__ApiKey: "${ANTHROPIC_API_KEY:-}"
+      # Select the provider and set its key. Others: OpenAI / Gemini / DeepSeek.
+      Generation__Provider: "${AI_PROVIDER:-Anthropic}"
+      Generation__Providers__Anthropic__ApiKey: "${ANTHROPIC_API_KEY:-}"
+      Generation__Providers__OpenAI__ApiKey: "${OPENAI_API_KEY:-}"
+      Generation__Providers__Gemini__ApiKey: "${GEMINI_API_KEY:-}"
+      Generation__Providers__DeepSeek__ApiKey: "${DEEPSEEK_API_KEY:-}"
     depends_on:
       sqlserver:
         condition: service_healthy

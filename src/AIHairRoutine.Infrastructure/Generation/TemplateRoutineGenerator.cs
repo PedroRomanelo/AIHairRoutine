@@ -1,11 +1,11 @@
 using AIHairRoutine.Application.Abstractions;
 using AIHairRoutine.Application.Models;
 
-namespace AIHairRoutine.Infrastructure.Claude;
+namespace AIHairRoutine.Infrastructure.Generation;
 
 /// <summary>
 /// Deterministic fallback generator. Produces a sensible, safe routine without any LLM,
-/// so the endpoint keeps working (with degraded richness) when Claude is unavailable.
+/// so the endpoint keeps working (with degraded richness) when the provider is unavailable.
 /// </summary>
 public sealed class TemplateRoutineGenerator : IRoutineGenerator
 {

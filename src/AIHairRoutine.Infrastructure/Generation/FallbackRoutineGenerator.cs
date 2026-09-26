@@ -2,11 +2,11 @@ using AIHairRoutine.Application.Abstractions;
 using AIHairRoutine.Application.Models;
 using Microsoft.Extensions.Logging;
 
-namespace AIHairRoutine.Infrastructure.Claude;
+namespace AIHairRoutine.Infrastructure.Generation;
 
 /// <summary>
-/// Tries the primary generator (Claude); on any failure degrades gracefully to the fallback
-/// (template). Keeps the endpoint responsive even when the LLM is down or rate-limited.
+/// Tries the primary generator (the active AI provider); on any failure degrades gracefully to the
+/// fallback (template). Keeps the endpoint responsive even when the LLM is down or rate-limited.
 /// </summary>
 public sealed class FallbackRoutineGenerator(
     IRoutineGenerator primary,

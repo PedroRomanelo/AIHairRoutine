@@ -64,7 +64,7 @@ public sealed class DiagnosisApiTests(DiagnosisApiTests.Factory factory) : IClas
                 cfg.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["Jev:ApiKey"] = string.Empty,
-                    ["Anthropic:ApiKey"] = string.Empty,
+                    ["Generation:Providers:Anthropic:ApiKey"] = string.Empty,
                     ["Database:ConnectionString"] = string.Empty,
                     ["Database:RunMigrationsOnStartup"] = "false",
                 });

@@ -2,10 +2,13 @@ using System.Text;
 using System.Text.Json;
 using AIHairRoutine.Application.Models;
 
-namespace AIHairRoutine.Infrastructure.Claude;
+namespace AIHairRoutine.Infrastructure.Generation;
 
-/// <summary>Builder for the Claude system+user prompt that produces the routine as strict JSON.</summary>
-public sealed class ClaudePromptBuilder
+/// <summary>
+/// Builds the provider-agnostic system+user prompt that asks the model for the routine as strict JSON.
+/// The same prompt is fed to whichever provider adapter is active.
+/// </summary>
+public sealed class RoutinePromptBuilder
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

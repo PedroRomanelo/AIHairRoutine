@@ -6,11 +6,11 @@ using AIHairRoutine.Infrastructure.Config;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 
-namespace AIHairRoutine.Infrastructure.Claude;
+namespace AIHairRoutine.Infrastructure.Generation;
 
 /// <summary>
 /// Decorator that caches generated routines keyed by the normalized profile+priorities+products+locale.
-/// This collapses the expensive Claude calls for equivalent inputs — the biggest scale lever.
+/// This collapses the expensive LLM calls for equivalent inputs — the biggest scale lever.
 /// </summary>
 public sealed class CachingRoutineGenerator(
     IRoutineGenerator inner,

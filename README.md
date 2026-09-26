@@ -4,7 +4,8 @@ API .NET 10 que recebe um questionário capilar, gera um **perfil tipado + prior
 uma **rotina de cuidados** com **produtos recomendados** do catálogo. Integra dois serviços:
 
 - **JEV (TypeSafe AI)** — classifica o perfil/prioridades (System One Model).
-- **Claude (Anthropic)** — escreve a rotina final em linguagem natural.
+- **Provedor de IA** — escreve a rotina final em linguagem natural. Suporta **Anthropic (Claude)**,
+  **OpenAI**, **Google Gemini** e **DeepSeek**, selecionáveis por configuração.
 
 O desenho prioriza **degradação graciosa**: sem chaves e sem banco, a API continua funcionando
 (perfil por **regras** + rotina por **template**). As chaves habilitam progressivamente as partes de IA.
@@ -15,16 +16,32 @@ O desenho prioriza **degradação graciosa**: sem chaves e sem banco, a API cont
 src/
   AIHairRoutine.Api             Minimal API, OpenAPI/Scalar, health, rate limiting, ProblemDetails
   AIHairRoutine.Application     Domínio: modelos, interfaces (seams), regras, matching, facade
-  AIHairRoutine.Infrastructure  JEV, Claude, Dapper/SQL Server, HybridCache, resiliência (Polly)
+  AIHairRoutine.Infrastructure  JEV, provedores de IA, Dapper/SQL Server, HybridCache, resiliência (Polly)
 tests/
   AIHairRoutine.Tests           unit (profiler, matcher) + integração (endpoint)
 ```
 
 Fluxo: `validar → IHairProfiler → IProductMatcher → IRoutineGenerator → montar DiagnosisResult`.
 
-Padrões: **Adapter** (JEV/Claude), **Facade** (`DiagnosisService`), **Strategy** (`HybridProfiler`,
-`ProductMatcher`), **Decorator** (`CachingRoutineGenerator`), **Builder** (`JevRequestBuilder`,
-`ClaudePromptBuilder`), **Fallback/graceful degradation** (`FallbackRoutineGenerator`).
+Padrões: **Adapter** (`JevProfiler`; `IChatModelClient` por provedor de IA), **Abstract Factory**
+(`IChatModelClientFactory` + `ChatModelClientFactory` selecionam a família do provedor ativo),
+**Strategy** (`IRoutineGenerator`; `IApiKeyAuthenticator` para o esquema de autenticação por provedor;
+`HybridProfiler`, `ProductMatcher`), **Facade** (`DiagnosisService`), **Decorator**
+(`CachingRoutineGenerator`), **Builder** (`JevRequestBuilder`, `RoutinePromptBuilder`),
+**Fallback/graceful degradation** (`FallbackRoutineGenerator`).
+
+### Provedores de IA (Strategy + Adapter + Abstract Factory)
+
+A variação entre provedores fica isolada em três eixos:
+
+- **API key (Strategy — `IApiKeyAuthenticator`)**: Anthropic usa `x-api-key` + `anthropic-version`,
+  OpenAI/DeepSeek usam `Authorization: Bearer`, Gemini usa `x-goog-api-key`.
+- **Formato/endpoint (Adapter — `IChatModelClient`)**: cada API tem corpo, rota e resposta próprios
+  (`v1/messages`, `v1/chat/completions`, `v1beta/models/{model}:generateContent`). DeepSeek reaproveita
+  o adapter OpenAI-compatível. O `ChatRoutineGenerator` permanece agnóstico ao provedor.
+- **Montagem (Abstract Factory — `IChatModelClientFactory`)**: uma factory por provedor cria o par
+  adapter+autenticação sobre um HttpClient nomeado; `ChatModelClientFactory` resolve a do provedor
+  configurado. Adicionar um provedor = registrar mais uma factory.
 
 O documento de projeto completo (requisitos, escalabilidade, diagramas) está em
 `../.claude/plans/preciso-criar-uma-api-typed-brook.md`.
@@ -60,8 +77,10 @@ curl -s http://localhost:5080/api/v1/diagnoses \
 | Chave | Env | Efeito |
 |-------|-----|--------|
 | `Jev:ApiKey` | `Jev__ApiKey` | Vazio → perfil só por regras. Preenchido → híbrido (JEV nos casos ambíguos). |
-| `Anthropic:ApiKey` | `Anthropic__ApiKey` | Vazio → rotina por template. Preenchido → rotina pelo Claude. |
-| `Anthropic:Model` | `Anthropic__Model` | Modelo de geração (padrão `claude-sonnet-5`). |
+| `Generation:Provider` | `Generation__Provider` | Provedor ativo: `Anthropic` (padrão), `OpenAI`, `Gemini` ou `DeepSeek`. |
+| `Generation:Providers:<Prov>:ApiKey` | `Generation__Providers__<Prov>__ApiKey` | Vazio (no provedor ativo) → rotina por template. Preenchido → rotina pela IA. |
+| `Generation:Providers:<Prov>:Model` | `Generation__Providers__<Prov>__Model` | Modelo do provedor (ex.: `claude-sonnet-5`, `gpt-4o-mini`, `gemini-2.0-flash`, `deepseek-chat`). |
+| `Generation:MaxTokens` / `Generation:TimeoutSeconds` | | Orçamento de tokens / timeout compartilhado. |
 | `Database:ConnectionString` | `Database__ConnectionString` | Vazio → catálogo vazio (sem recomendações). |
 | `RoutineCache:ExpirationMinutes` | | TTL do cache de rotinas. |
 

@@ -10,10 +10,12 @@ internal sealed class FakeHttpHandler(HttpStatusCode status, string responseJson
     public Uri? Uri { get; private set; }
     public Dictionary<string, string> Headers { get; } = new(StringComparer.OrdinalIgnoreCase);
     public string? Body { get; private set; }
+    public int Calls { get; private set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         // Captured here because the caller disposes the request (and its content) after sending.
+        Calls++;
         Method = request.Method;
         Uri = request.RequestUri;
         foreach (var header in request.Headers)
@@ -25,6 +27,13 @@ internal sealed class FakeHttpHandler(HttpStatusCode status, string responseJson
             Content = new StringContent(responseJson, Encoding.UTF8, "application/json"),
         };
     }
+}
+
+/// <summary>Fails every request with the given exception (e.g. a timeout surfacing as TaskCanceledException).</summary>
+internal sealed class ThrowingHttpHandler(Exception exception) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+        Task.FromException<HttpResponseMessage>(exception);
 }
 
 /// <summary>Hands out clients over one fake handler, with the base address a named client would have.</summary>

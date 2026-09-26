@@ -3,14 +3,16 @@ using AIHairRoutine.Application.Models;
 namespace AIHairRoutine.Application.Abstractions;
 
 /// <summary>
-/// Generates the final routine from a profile and matched products.
-/// Implementations: Claude (adapter), template (fallback), caching decorator.
+/// Writes the narrative for an already-built schedule: summary, how/why for each product and tips.
+/// The calendar itself (days, frequencies, H/N/R cycle) is deterministic; generators only add text.
+/// Implementations: AI provider (adapter), template (fallback), caching decorator.
 /// </summary>
 public interface IRoutineGenerator
 {
     Task<RoutineResult> GenerateAsync(
         ProfileResult profile,
-        IReadOnlyList<ProductMatch> products,
+        HairSchedule schedule,
+        IReadOnlyList<Product> products,
         string locale,
         CancellationToken ct = default);
 }

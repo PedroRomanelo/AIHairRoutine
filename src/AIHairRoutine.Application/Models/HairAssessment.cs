@@ -1,31 +1,42 @@
 namespace AIHairRoutine.Application.Models;
 
-/// <summary>Raw questionnaire answers submitted by the client. This is the API input.</summary>
+/// <summary>
+/// Questionnaire answers submitted by the client. This is the API input. Single-choice answers are
+/// nullable so a missing answer is reported by the validator instead of silently defaulting.
+/// </summary>
 public sealed record HairAssessment
 {
-    public HairType HairType { get; init; }
+    public HairType? HairType { get; init; }
 
-    public ChemicalTreatment ChemicalTreatment { get; init; } = ChemicalTreatment.None;
+    public HairThickness? Thickness { get; init; }
 
-    /// <summary>Whether the hair is color treated (independent from <see cref="ChemicalTreatment"/>).</summary>
-    public bool ColorTreated { get; init; }
+    public HairTone? Tone { get; init; }
 
-    /// <summary>Self-reported intensity of each concern, 0..10.</summary>
-    public HairConcerns Concerns { get; init; } = new();
+    /// <summary>Current conditions (multiple choice).</summary>
+    public IReadOnlyList<HairCondition>? Conditions { get; init; }
 
-    /// <summary>Optional free text. When present, the hybrid profiler prefers JEV.</summary>
-    public string? Notes { get; init; }
+    /// <summary>Chemical history. Null or <c>hasChemical = false</c> means no chemical process.</summary>
+    public ChemicalHistory? Chemical { get; init; }
 
-    /// <summary>BCP-47 language tag for the generated routine text. Defaults to pt-BR.</summary>
+    /// <summary>Free text: main complaint or goal (queda, ressecamento, volume, brilho...).</summary>
+    public string? MainGoal { get; init; }
+
+    /// <summary>Ticked allergens (checkbox). Empty means no known allergy.</summary>
+    public IReadOnlyList<Allergen>? Allergies { get; init; }
+
+    /// <summary>BCP-47 language tag for the generated texts. Defaults to pt-BR.</summary>
     public string Locale { get; init; } = "pt-BR";
 }
 
-/// <summary>Scores 0..10 for each perceived problem.</summary>
-public sealed record HairConcerns
+/// <summary>Chemical history answers.</summary>
+public sealed record ChemicalHistory
 {
-    public int Dryness { get; init; }
-    public int Frizz { get; init; }
-    public int Breakage { get; init; }
-    public int Oiliness { get; init; }
-    public int HairLoss { get; init; }
+    public bool HasChemical { get; init; }
+
+    public ChemicalType? Type { get; init; }
+
+    /// <summary>When it was done: "há 2 meses", "3 semanas", "10/06/2026", "2026-06-10" or "06/2026".</summary>
+    public string? Performed { get; init; }
+
+    public TouchUpFrequency? TouchUpFrequency { get; init; }
 }

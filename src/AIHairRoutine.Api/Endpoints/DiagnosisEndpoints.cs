@@ -24,7 +24,7 @@ public static class DiagnosisEndpoints
                 return Results.Ok(result);
             })
             .WithName("CreateDiagnosis")
-            .WithSummary("Gera perfil capilar, prioridades, produtos recomendados e rotina.")
+            .WithSummary("Gera perfil capilar, prioridades, produtos recomendados e o cronograma capilar de 4 semanas (H/N/R).")
             .Produces<DiagnosisResult>()
             .ProducesValidationProblem()
             .RequireRateLimiting("diagnoses");

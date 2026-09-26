@@ -22,15 +22,15 @@ internal static class TestData
     public static HairAssessment Assessment(
         HairType hairType = HairType.Wavy,
         params HairCondition[] conditions) => new()
-    {
-        HairType = hairType,
-        Thickness = HairThickness.Medium,
-        Tone = HairTone.Brown,
-        Conditions = conditions.Length > 0 ? conditions : [HairCondition.Dry],
-        MainGoal = "quero hidratar o cabelo",
-        Allergies = [],
-        Locale = "pt-BR",
-    };
+        {
+            HairType = hairType,
+            Thickness = HairThickness.Medium,
+            Tone = HairTone.Brown,
+            Conditions = conditions.Length > 0 ? conditions : [HairCondition.Dry],
+            MainGoal = "quero hidratar o cabelo",
+            Allergies = [],
+            Locale = "pt-BR",
+        };
 
     public static ChemicalHistory Chemical(ChemicalType type, string performed) => new()
     {
@@ -102,22 +102,22 @@ internal static class TestCatalog
         int? minutes = null,
         int order = 1,
         int minInterval = 0) => new()
-    {
-        // Deterministic id per name so test data is stable across runs.
-        Id = new Guid(MD5.HashData(Encoding.UTF8.GetBytes(name))),
-        Name = name,
-        Category = category,
-        Targets = targets ?? [],
-        TreatmentTypes = treatments ?? [],
-        HairTypes = hairTypes ?? [],
-        SafeForChemical = safeForChemical,
-        ContraindicatedChemicals = contraindicated ?? [],
-        Allergens = allergens ?? [],
-        UsageFrequency = frequency,
-        ActionTimeMinutes = minutes,
-        ApplicationOrder = order,
-        MinIntervalDays = minInterval,
-        Price = 39.90m,
-        SizeMl = 250,
-    };
+        {
+            // Deterministic id per name so test data is stable across runs.
+            Id = new Guid(MD5.HashData(Encoding.UTF8.GetBytes(name))),
+            Name = name,
+            Category = category,
+            Targets = targets ?? [],
+            TreatmentTypes = treatments ?? [],
+            HairTypes = hairTypes ?? [],
+            SafeForChemical = safeForChemical,
+            ContraindicatedChemicals = contraindicated ?? [],
+            Allergens = allergens ?? [],
+            UsageFrequency = frequency,
+            ActionTimeMinutes = minutes,
+            ApplicationOrder = order,
+            MinIntervalDays = minInterval,
+            Price = 39.90m,
+            SizeMl = 250,
+        };
 }

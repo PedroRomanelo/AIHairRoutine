@@ -23,26 +23,26 @@ public sealed class ProductRepositoryTests
         string? contraindicated = "",
         string? ingredients = "",
         string? allergens = "") => new()
-    {
-        Id = Guid.Parse("3f2b8c1e-0000-4000-8000-000000000001"),
-        Name = "Produto",
-        Brand = "Marca",
-        Description = "Descrição",
-        Category = category,
-        HairTypesCsv = hairTypes,
-        TargetsCsv = targets,
-        TreatmentTypesCsv = treatments,
-        SafeForChemical = true,
-        ContraindicatedChemicalsCsv = contraindicated,
-        UsageFrequency = usage,
-        ActionTimeMinutes = 20,
-        ApplicationOrder = 3,
-        MinIntervalDays = 3,
-        KeyIngredientsCsv = ingredients,
-        AllergensCsv = allergens,
-        Price = 69.90m,
-        SizeMl = 300,
-    };
+        {
+            Id = Guid.Parse("3f2b8c1e-0000-4000-8000-000000000001"),
+            Name = "Produto",
+            Brand = "Marca",
+            Description = "Descrição",
+            Category = category,
+            HairTypesCsv = hairTypes,
+            TargetsCsv = targets,
+            TreatmentTypesCsv = treatments,
+            SafeForChemical = true,
+            ContraindicatedChemicalsCsv = contraindicated,
+            UsageFrequency = usage,
+            ActionTimeMinutes = 20,
+            ApplicationOrder = 3,
+            MinIntervalDays = 3,
+            KeyIngredientsCsv = ingredients,
+            AllergensCsv = allergens,
+            Price = 69.90m,
+            SizeMl = 300,
+        };
 
     [Fact]
     public void Maps_every_column_and_snake_case_token()

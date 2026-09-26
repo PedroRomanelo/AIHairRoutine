@@ -8,8 +8,10 @@ public sealed class RuleBasedProfilerTests
     [Fact]
     public void Combines_conditions_and_the_stated_goal_into_ordered_priorities()
     {
-        var assessment = TestData.Assessment(HairType.Wavy, HairCondition.Dry, HairCondition.Frizzy)
-            with { MainGoal = "Quero reduzir o frizz e ter mais brilho" };
+        var assessment = TestData.Assessment(HairType.Wavy, HairCondition.Dry, HairCondition.Frizzy) with
+        {
+            MainGoal = "Quero reduzir o frizz e ter mais brilho",
+        };
 
         var result = TestData.Rules.Profile(assessment);
 
